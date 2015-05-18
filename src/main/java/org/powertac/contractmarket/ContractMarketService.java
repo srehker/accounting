@@ -33,102 +33,98 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ContractMarketService extends TimeslotPhaseProcessor implements InitializationService, ContractMarket{
+public class ContractMarketService extends TimeslotPhaseProcessor implements
+		InitializationService, ContractMarket {
 
-	  static private Logger log =
-	          Logger.getLogger(ContractMarketService.class.getSimpleName());
+	static private Logger log = Logger.getLogger(ContractMarketService.class
+			.getSimpleName());
 
-	  @Autowired
-	  private TimeService timeService;
-	  
-	  @Autowired
-	  private Accounting accountingService;
-	  
-	  @Autowired
-	  private CapacityControl capacityControlService;
-	  
-	  @Autowired
-	  private BrokerProxy brokerProxyService;
-	  
-	  @Autowired
-	  private BrokerRepo brokerRepo;
-	  
-	  @Autowired
-	  private TimeslotRepo timeslotRepo;
-	  
-	  @Autowired
-	  private TariffRepo tariffRepo;
-	  
-	  @Autowired
-	  private TariffSubscriptionRepo tariffSubscriptionRepo;
-	  
-	  @Autowired
-	  private ServerConfiguration serverProps;
+	@Autowired
+	private TimeService timeService;
 
-	  @Autowired
-	  private RandomSeedRepo randomSeedService;
-	  
-	  private Set<ContractNegotiationMessageListener> registrations = new HashSet<ContractNegotiationMessageListener>();
-	
+	@Autowired
+	private Accounting accountingService;
+
+	@Autowired
+	private CapacityControl capacityControlService;
+
+	@Autowired
+	private BrokerProxy brokerProxyService;
+
+	@Autowired
+	private BrokerRepo brokerRepo;
+
+	@Autowired
+	private TimeslotRepo timeslotRepo;
+
+	@Autowired
+	private TariffRepo tariffRepo;
+
+	@Autowired
+	private TariffSubscriptionRepo tariffSubscriptionRepo;
+
+	@Autowired
+	private ServerConfiguration serverProps;
+
+	@Autowired
+	private RandomSeedRepo randomSeedService;
+
+	private Set<ContractNegotiationMessageListener> registrations = new HashSet<ContractNegotiationMessageListener>();
+
 	@Override
 	public void setDefaults() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public String initialize(Competition competition,
 			List<String> completedInits) {
 		int index = completedInits.indexOf("AccountingService");
-	    if (index == -1) {
-	      return null;
-	    }
+		if (index == -1) {
+			return null;
+		}
 
-	    for (Class<?> messageType: Arrays.asList(ContractOffer.class,
-	                                             ContractAccept.class,
-	                                             ContractAnnounce.class,
-	                                             ContractConfirm.class,
-	                                             ContractDecommit.class,
-	                                             ContractEnd.class)) {
-	      brokerProxyService.registerBrokerMessageListener(this, messageType);
-	    }
-	    registrations.clear();
+		for (Class<?> messageType : Arrays.asList(ContractOffer.class,
+				ContractAccept.class, ContractAnnounce.class,
+				ContractConfirm.class, ContractDecommit.class,
+				ContractEnd.class)) {
+			brokerProxyService.registerBrokerMessageListener(this, messageType);
+		}
+		registrations.clear();
 
-	    
-	    super.init();
-	    
+		super.init();
 
+		serverProps.configureMe(this);
 
-	    serverProps.configureMe(this);
+		// Register the NewTariffListeners
+		List<ContractNegotiationMessageListener> listeners = SpringApplicationContext
+				.listBeansOfType(ContractNegotiationMessageListener.class);
+		for (ContractNegotiationMessageListener listener : listeners) {
+			registerContractNegotiationMessageListener(listener);
+		}
 
-	    // Register the NewTariffListeners
-	    List<ContractNegotiationMessageListener> listeners =
-	        SpringApplicationContext.listBeansOfType(ContractNegotiationMessageListener.class);
-	    for (ContractNegotiationMessageListener listener : listeners) {
-	      registerContractNegotiationMessageListener(listener);
-	    }
-
-	    serverProps.publishConfiguration(this);
-	    return "ContractMarket";
+		serverProps.publishConfiguration(this);
+		return "ContractMarket";
 	}
 
 	@Override
 	public void activate(Instant time, int phaseNumber) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void forwardCollectedMessages() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void registerContractNegotiationMessageListener(
 			ContractNegotiationMessageListener listener) {
 		registrations.add(listener);
-		
+
 	}
 
 }
